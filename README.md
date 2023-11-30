@@ -1,0 +1,3 @@
+# NetCoreIdentity
+
+This project is a study on authentication and authorization using .NET Core Identity. It has been developed based on information gathered from various online resources and different course contents. It encompasses user registration, login, authorization, and authentication processes using the Identity framework provided by .NET Core. The goal of the project is to comprehend and implement the .NET Core Identity structure. While covering the fundamental functionalities of .NET Core Identity, the project also demonstrates how information from diverse sources can be utilized within an application.
