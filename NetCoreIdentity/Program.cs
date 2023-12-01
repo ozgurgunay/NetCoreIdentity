@@ -14,6 +14,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 //calling StartupExtensions methodin Extensions File.
 builder.Services.AddIdentityExtension();
 
+builder.Services.ConfigureApplicationCookie(opt =>
+{
+    var cookieBuilder = new CookieBuilder();
+    cookieBuilder.Name = "IdentityAppCookie";
+    opt.LoginPath = new PathString("/Home/SignIn");
+    opt.LogoutPath = new PathString("/Member/Logout");  //this line adding for alternative logout method in MemberController
+    opt.Cookie = cookieBuilder;
+    opt.ExpireTimeSpan = TimeSpan.FromDays(15);
+    opt.SlidingExpiration = true;
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -29,6 +40,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 //adding for new Areas!
