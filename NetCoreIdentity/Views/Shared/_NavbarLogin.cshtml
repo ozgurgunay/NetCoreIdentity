@@ -1,0 +1,19 @@
+﻿@if (User.Identity!.IsAuthenticated)
+{
+    <ul class="navbar-nav me-0">
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                @User.Identity.Name
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                <li><a class="dropdown-item" asp-route-returnurl="/Home/Index" asp-controller="Member" asp-action="Logout">Log Out</a></li>
+                @* asp-rout-returnurl="/Home/Index" this part adding for alternative logout in MemberController *@
+            </ul>
+        </li>
+    </ul>
+}
+else
+{
+    <a class="btn btn-outline-success mx-2" asp-controller="Home" asp-action="SignIn">Sign In</a>
+    <a class="btn btn-outline-success" asp-controller="Home" asp-action="SignUp">Sign Up</a>
+}

@@ -86,7 +86,7 @@ namespace NetCoreIdentity.Controllers
 
             var signInResult = await _signInManager.PasswordSignInAsync(hasUser, request.Password, request.RememberMe, false);
             if (signInResult.Succeeded)
-            {
+            {              
                 return Redirect(returnUrl);
             }
             ModelState.AddModelErrorList(new List<string>() { "E-Mail or Password is wrong!" });
