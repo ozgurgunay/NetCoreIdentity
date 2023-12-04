@@ -1,6 +1,10 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using NetCoreIdentity.Extensions;
 using NetCoreIdentity.Models;
+using NetCoreIdentity.OptionsModel;
+using NetCoreIdentity.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +15,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("ContentCreatorConnection"));
 });
+
+//for sending email
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 //calling StartupExtensions methodin Extensions File.
 builder.Services.AddIdentityExtension();
 

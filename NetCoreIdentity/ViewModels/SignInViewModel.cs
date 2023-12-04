@@ -20,9 +20,12 @@ namespace NetCoreIdentity.ViewModels
         [EmailAddress(ErrorMessage = "Password")]
         [Display(Name ="Email")]
         public string Email { get; set; }
+
+        [DataType(DataType.Password)]
         [Required(ErrorMessage = "Password can not be left empty!")]
         [Display(Name = "Password")]
         public string Password { get; set; }
+        
         [Display(Name = "Check me out")]
         public bool RememberMe { get; set; }
     }
