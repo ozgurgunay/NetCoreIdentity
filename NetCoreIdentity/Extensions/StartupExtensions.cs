@@ -1,4 +1,5 @@
-﻿using NetCoreIdentity.CustomValidations;
+﻿using Microsoft.AspNetCore.Identity;
+using NetCoreIdentity.CustomValidations;
 using NetCoreIdentity.Localizations;
 using NetCoreIdentity.Models;
 
@@ -9,6 +10,9 @@ namespace NetCoreIdentity.Extensions
         //You can write this in program.cs but it is better to write it here to keep it organized and make program.cs readable.
         public static void AddIdentityExtension(this IServiceCollection services)
         {
+            //adding for token period
+            services.Configure<DataProtectionTokenProviderOptions>(options => { options.TokenLifespan = TimeSpan.FromHours(1); });
+
             services.AddIdentity<AppUser, AppRole>(options =>
             {
                 //for unique email address and user name characters
@@ -24,6 +28,7 @@ namespace NetCoreIdentity.Extensions
             }).AddPasswordValidator<PasswordValidator>()
                 .AddUserValidator<UserValidator>()
                 .AddErrorDescriber<LocalizationIdentityErrorDescriber>()
+                .AddDefaultTokenProviders()
                 .AddEntityFrameworkStores<AppDbContext>();
             //.AddPasswordValidator<PasswordValidator>() this part adding with CustomValidations file.
         }

@@ -28,9 +28,12 @@ namespace NetCoreIdentity.ViewModels
         [Display(Name = "Phone Number :")]
         public string PhoneNumber { get; set; }
 
+        [DataType(DataType.Password)]
         [Required(ErrorMessage = "Password can not be left empty!")]
         [Display(Name = "Password :")]
         public string Password { get; set; }
+        
+        [DataType(DataType.Password)]
         [Compare(nameof(Password), ErrorMessage = "Password is not same!")]
         [Required(ErrorMessage = "Password Confirm can not be left empty!")]
         [Display(Name = "Password Confirm :")]
