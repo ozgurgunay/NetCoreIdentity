@@ -19,25 +19,27 @@ namespace NetCoreIdentity.ViewModels
 
         [Required(ErrorMessage = "User Name can not be left empty!")]
         [Display(Name = "User Name :")]
-        public string UserName { get; set; }
+        public string UserName { get; set; } = null!;
         [EmailAddress(ErrorMessage = "Please check e-mail format!")]
         [Required(ErrorMessage = "E-Mail can not be left empty!")]
         [Display(Name = "E-Mail :")]
-        public string Email { get; set; }
+        public string Email { get; set; } = null!;
         [Required(ErrorMessage = "Phone Number can not be left empty!")]
         [Display(Name = "Phone Number :")]
-        public string PhoneNumber { get; set; }
+        public string PhoneNumber { get; set; } = null!;
 
         [DataType(DataType.Password)]
         [Required(ErrorMessage = "Password can not be left empty!")]
         [Display(Name = "Password :")]
-        public string Password { get; set; }
-        
+        [MinLength(6, ErrorMessage = "Password have to be min. 6 character")]
+        public string Password { get; set; } = null!;
+
         [DataType(DataType.Password)]
         [Compare(nameof(Password), ErrorMessage = "Password is not same!")]
         [Required(ErrorMessage = "Password Confirm can not be left empty!")]
         [Display(Name = "Password Confirm :")]
-        public string PasswordConfirm { get; set; }
+        [MinLength(6, ErrorMessage = "Password have to be min. 6 character")]
+        public string PasswordConfirm { get; set; } = null!;
         
     }
 }
