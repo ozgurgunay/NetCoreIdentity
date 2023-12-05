@@ -6,6 +6,9 @@
                 @User.Identity.Name
             </a>
             <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                <li><a class="dropdown-item" asp-route-returnurl="/Home/Index" asp-controller="Member" asp-action="Index">Profile</a></li>
+                <li><a class="dropdown-item" asp-route-returnurl="/Home/Index" asp-controller="Member" asp-action="UserEdit">Update Profile</a></li>
+                <li><a class="dropdown-item" asp-route-returnurl="/Home/Index" asp-controller="Member" asp-action="PasswordChange">Change Password</a></li>
                 <li><a class="dropdown-item" asp-route-returnurl="/Home/Index" asp-controller="Member" asp-action="Logout">Log Out</a></li>
                 @* asp-rout-returnurl="/Home/Index" this part adding for alternative logout in MemberController *@
             </ul>

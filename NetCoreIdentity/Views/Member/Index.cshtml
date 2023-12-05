@@ -1,7 +1,36 @@
-﻿
-@{
+﻿@{
     ViewData["Title"] = "Index";
 }
+@model UserViewModel
 
-<h1>Welcome @User.Identity!.Name</h1>
+
+<div class="row">
+    <div class="col-md-6 offset-md-3 text-center">
+        <user-picture-thumbnail style="width:300px" picture-url="@Model.PictureUrl"></user-picture-thumbnail>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="col-md-8 offset-md-4 mb-3">
+            <h2>User information</h2>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>User Name</th>
+                    <th>Email</th>
+                    <th>Phone Number</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>@Model.UserName</td>
+                    <td>@Model.Email</td>
+                    <td>@Model.PhoneNumber</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 

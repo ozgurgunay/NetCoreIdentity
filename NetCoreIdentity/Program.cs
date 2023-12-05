@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using NetCoreIdentity.Extensions;
 using NetCoreIdentity.Models;
 using NetCoreIdentity.OptionsModel;
@@ -15,6 +16,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("ContentCreatorConnection"));
 });
+
+builder.Services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Directory.GetCurrentDirectory()));
+
 
 //for sending email
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
