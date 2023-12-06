@@ -1,4 +1,5 @@
-﻿@if (User.Identity!.IsAuthenticated)
+﻿@using System.Security.Claims;
+@if (User.Identity!.IsAuthenticated)
 {
     <ul class="navbar-nav me-0">
         <li class="nav-item dropdown">
@@ -8,6 +9,10 @@
             <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                 <li><a class="dropdown-item" asp-route-returnurl="/Home/Index" asp-controller="Member" asp-action="Index">Profile</a></li>
                 <li><a class="dropdown-item" asp-route-returnurl="/Home/Index" asp-controller="Member" asp-action="UserEdit">Update Profile</a></li>
+                @if (User.HasClaim(x => x.Type == ClaimTypes.Role && x.Value == "Admin"))
+                {
+                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Home" asp-action="Index">Admin Page</a></li>
+                }
                 <li><a class="dropdown-item" asp-route-returnurl="/Home/Index" asp-controller="Member" asp-action="PasswordChange">Change Password</a></li>
                 <li><a class="dropdown-item" asp-route-returnurl="/Home/Index" asp-controller="Member" asp-action="Logout">Log Out</a></li>
                 @* asp-rout-returnurl="/Home/Index" this part adding for alternative logout in MemberController *@
