@@ -165,5 +165,12 @@ namespace NetCoreIdentity.Controllers
 
         }
 
+        public IActionResult AccessDenied(string returnUrl)
+        {
+            string message = string.Empty;
+            message = "You are not authorized to view this page! Sorry, not sorry dudeee.";
+            ViewBag.message = message;
+            return View();
+        }
     }
 }

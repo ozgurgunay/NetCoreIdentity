@@ -33,6 +33,7 @@ builder.Services.ConfigureApplicationCookie(opt =>
     cookieBuilder.Name = "IdentityAppCookie";
     opt.LoginPath = new PathString("/Home/SignIn");
     opt.LogoutPath = new PathString("/Member/Logout");  //this line adding for alternative logout method in MemberController
+    opt.AccessDeniedPath = new PathString("/Member/AccessDenied");
     opt.Cookie = cookieBuilder;
     opt.ExpireTimeSpan = TimeSpan.FromDays(15);
     opt.SlidingExpiration = true;
