@@ -7,6 +7,8 @@ using NetCoreIdentity.Areas.Admin.Models;
 using NetCoreIdentity.Extensions;
 using NetCoreIdentity.Models;
 using NetCoreIdentity.ViewModels;
+using System.Collections.Generic;
+using System.Security.Claims;
 
 namespace NetCoreIdentity.Controllers
 {
@@ -27,6 +29,10 @@ namespace NetCoreIdentity.Controllers
 
         public async Task<IActionResult> Index()
         {
+            var userClaims = User.Claims.ToList();
+            var email = User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Role);
+            
+
             var currentUser = await _userManager.FindByNameAsync(User.Identity!.Name!);
 
             var userViewModel = new ViewModels.UserViewModel
@@ -110,7 +116,7 @@ namespace NetCoreIdentity.Controllers
         [HttpPost]
         public async Task<IActionResult> UserEdit(UserEditViewModel model)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return View();
             }
@@ -124,7 +130,7 @@ namespace NetCoreIdentity.Controllers
             currentUser.Gender = model.Gender;
 
 
-            if(model.Picture != null && model.Picture.Length > 0)
+            if (model.Picture != null && model.Picture.Length > 0)
             {
                 var wwwroot = _fileProvider.GetDirectoryContents("wwwroot");
 
@@ -138,16 +144,39 @@ namespace NetCoreIdentity.Controllers
                 currentUser.Picture = randomFileName;
             }
             var updateToUserResult = await _userManager.UpdateAsync(currentUser);
-            
-            if(!updateToUserResult.Succeeded)
+
+            if (!updateToUserResult.Succeeded)
             {
                 ModelState.AddModelErrorList(updateToUserResult.Errors);
                 return View();
             }
 
             await _userManager.UpdateSecurityStampAsync(currentUser);
+            //we need new cookie and we have to signout and signin again!
             await _signInManager.SignOutAsync();
-            await _signInManager.SignInAsync(currentUser, true);
+            //for claims
+            var claims = new List<Claim>();
+            if (model.BirthDate.HasValue)
+            {
+                claims.Add(new Claim("Birthdate", model.BirthDate.Value.ToString()));
+            }
+            if (!String.IsNullOrEmpty(model.City))
+            {
+                claims.Add(new Claim("City", model.City));
+            }
+            if (claims.Any())
+            {
+                await _signInManager.SignInWithClaimsAsync(currentUser, true, claims.ToArray());
+            }
+            else
+            {
+                // If there are no claims, you can use the regular SignInAsync
+                await _signInManager.SignInAsync(currentUser,true);
+            }
+            //else
+            //{
+            //    await _signInManager.SignInAsync(currentUser, true);
+            //}
 
             var userEditViewModel = new UserEditViewModel()
             {
@@ -170,6 +199,41 @@ namespace NetCoreIdentity.Controllers
             string message = string.Empty;
             message = "You are not authorized to view this page! Sorry, not sorry dudeee.";
             ViewBag.message = message;
+            return View();
+        }
+
+        [HttpGet]
+        public  IActionResult Claims()
+        {
+            var userClaimList = User.Claims.Select(x => new ClaimViewModel()
+            {
+                Issuer = x.Issuer,
+                Type = x.Type,
+                Value = x.Value
+            }).ToList();
+
+            return View(userClaimList);
+        }
+
+        //[Authorize(Policy = "AnkaraPolicy")]
+        [Authorize(Policy = "CityPolicy")]
+        [HttpGet]
+        public IActionResult AnkaraPage()
+        {
+            return View();
+        }
+
+        [Authorize(Policy = "ExchangePolicy")]
+        [HttpGet]
+        public IActionResult ExchangePage()
+        {
+            return View();
+        }
+
+        [Authorize(Policy = "ViolencePolicy")]
+        [HttpGet]
+        public IActionResult ViolencePage()
+        {
             return View();
         }
     }

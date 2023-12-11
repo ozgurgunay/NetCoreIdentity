@@ -6,9 +6,12 @@ using System.Diagnostics;
 using NetCoreIdentity.Extensions;
 using System.Security.Policy;
 using NetCoreIdentity.Services;
+using System.Security.Claims;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace NetCoreIdentity.Controllers
 {
+    //Password123*
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -56,18 +59,30 @@ namespace NetCoreIdentity.Controllers
                 UserName = request.UserName,
                 PhoneNumber = request.PhoneNumber,
                 Email = request.Email
-            },
-                request.PasswordConfirm);
+            }, request.PasswordConfirm);
 
-            if (identityResult.Succeeded)
+            if (!identityResult.Succeeded)
             {
-                TempData["SuccessMessage"] = "Registration is successful.";
-
-                return RedirectToAction(nameof(HomeController.SignUp));
+                ModelState.AddModelErrorList(identityResult.Errors.Select(x => x.Description).ToList());
+                return View();
             }
-            ModelState.AddModelErrorList(identityResult.Errors.Select(x => x.Description).ToList());
 
-            return View();
+            #region claim-policy authorization example
+            //A new member can view this page for 10 days and then is blocked.
+            //this is for "ExchangeExpireRequirement"
+            var exchangeExpireClaim = new Claim("ExchangeExpireDate", DateTime.Now.AddDays(10).ToString());
+            var user = await _userManager.FindByNameAsync(request.UserName);
+            var claimResult = await _userManager.AddClaimAsync(user!, exchangeExpireClaim);
+            if (!claimResult.Succeeded)
+            {
+                ModelState.AddModelErrorList(claimResult.Errors.Select(x => x.Description).ToList());
+                return View();
+            }
+            #endregion
+
+            TempData["SuccessMessage"] = "Registration is successful.";
+            return RedirectToAction(nameof(HomeController.SignUp));
+
         }
 
         public IActionResult SignIn()
@@ -91,14 +106,41 @@ namespace NetCoreIdentity.Controllers
                 ModelState.AddModelError(string.Empty, "E-Mail or Password is wrong!");
                 return View();
             }
-
             var signInResult = await _signInManager.PasswordSignInAsync(hasUser, request.Password, request.RememberMe, false);
-            if (signInResult.Succeeded)
+            if (signInResult.IsLockedOut)
             {
-                return Redirect(returnUrl!);
+                ModelState.AddModelErrorList(new List<string>() { "you can't login in 3 min."});
+                return View();
             }
-            ModelState.AddModelErrorList(new List<string>() { "E-Mail or Password is wrong!" });
-            return View();
+            if (!signInResult.Succeeded)
+            {
+                ModelState.AddModelErrorList(new List<string>() { "E-Mail or Password is wrong!", $"Failed Login = {await _userManager.GetAccessFailedCountAsync(hasUser)}" });
+                return View();
+            }
+
+            var claims = new List<Claim>();
+            //create claim with signin your account
+            if (hasUser.BirthDate.HasValue)
+            {
+                claims.Add(new Claim("Birthdate", hasUser.BirthDate.Value.ToString()));
+               // await _signInManager.SignInWithClaimsAsync(hasUser, request.RememberMe, new[] { new Claim("Birthdate", hasUser.BirthDate.Value.ToString()) });
+            }
+            if (!String.IsNullOrEmpty(hasUser.City))
+            {
+                claims.Add(new Claim("City", hasUser.City));
+               // await _signInManager.SignInWithClaimsAsync(hasUser, request.RememberMe, new[] { new Claim("City", hasUser.City) });
+            }
+            if (claims.Any())
+            {
+                await _signInManager.SignInWithClaimsAsync(hasUser, request.RememberMe, claims.ToArray());
+            }
+            else
+            {
+                // If there are no claims, you can use the regular SignInAsync
+                await _signInManager.SignInAsync(hasUser, request.RememberMe);
+            }
+
+            return Redirect(returnUrl!);
         }
 
         public IActionResult ForgetPassword()
@@ -111,7 +153,7 @@ namespace NetCoreIdentity.Controllers
         {
             //link
             //https://localhost:7013?userId=132&token=hvsydhba
-            
+
             var hasUser = await _userManager.FindByEmailAsync(request.Email);
             if (hasUser == null)
             {
@@ -133,7 +175,7 @@ namespace NetCoreIdentity.Controllers
         public IActionResult ResetPassword(string userId, string token)
         {
             TempData["userId"] = userId;
-            TempData["token"] = token;            
+            TempData["token"] = token;
 
             return View();
         }
@@ -144,7 +186,7 @@ namespace NetCoreIdentity.Controllers
             var userId = TempData["userId"];
             var token = TempData["token"];
 
-            if(userId == null || token ==null)
+            if (userId == null || token == null)
             {
                 throw new Exception("error about password!");
             }
@@ -157,7 +199,7 @@ namespace NetCoreIdentity.Controllers
             }
 
             var result = await _userManager.ResetPasswordAsync(hasUser, token.ToString()!, request.Password);
-            if(result.Succeeded)
+            if (result.Succeeded)
             {
                 TempData["SuccessMessage"] = "Your password has been reset successfly.";
             }
