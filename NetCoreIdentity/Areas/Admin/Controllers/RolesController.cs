@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using NetCoreIdentity.Areas.Admin.Models;
-using NetCoreIdentity.Models;
+using NetCoreIdentity.Repository.Models;
 using System.Security.AccessControl;
 using NetCoreIdentity.Extensions;
 using Microsoft.EntityFrameworkCore;

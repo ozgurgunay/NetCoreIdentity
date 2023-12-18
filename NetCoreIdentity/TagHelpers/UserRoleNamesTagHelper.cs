@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Razor.TagHelpers;
-using NetCoreIdentity.Models;
+using NetCoreIdentity.Repository.Models;
 using System.Text;
 
 namespace NetCoreIdentity.TagHelpers
