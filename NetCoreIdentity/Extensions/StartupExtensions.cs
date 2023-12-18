@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using NetCoreIdentity.CustomValidations;
 using NetCoreIdentity.Localizations;
-using NetCoreIdentity.Models;
+using NetCoreIdentity.Repository.Models;
 
 namespace NetCoreIdentity.Extensions
 {

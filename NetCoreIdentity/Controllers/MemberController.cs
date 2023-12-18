@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.FileProviders;
 using NetCoreIdentity.Areas.Admin.Models;
 using NetCoreIdentity.Extensions;
-using NetCoreIdentity.Models;
-using NetCoreIdentity.ViewModels;
+using NetCoreIdentity.Repository.Models;
+using NetCoreIdentity.Core.ViewModels;
 using System.Collections.Generic;
 using System.Security.Claims;
+using NetCoreIdentity.Core.Models;
+using NetCoreIdentity.Service.Services;
 
 namespace NetCoreIdentity.Controllers
 {
@@ -19,31 +21,29 @@ namespace NetCoreIdentity.Controllers
         private readonly SignInManager<AppUser> _signInManager;
         private readonly UserManager<AppUser> _userManager;
         private readonly IFileProvider _fileProvider;
-
-        public MemberController(SignInManager<AppUser> signInManager, UserManager<AppUser> userManager, IFileProvider fileProvider)
+        private string userName => User.Identity!.Name!;    //=> means only get method
+        private readonly IMemberService _memberService;
+        public MemberController(SignInManager<AppUser> signInManager, UserManager<AppUser> userManager, IFileProvider fileProvider, IMemberService memberService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _fileProvider = fileProvider;
+            _memberService = memberService;
         }
 
         public async Task<IActionResult> Index()
         {
-            var userClaims = User.Claims.ToList();
-            var email = User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Role);
-            
-
-            var currentUser = await _userManager.FindByNameAsync(User.Identity!.Name!);
-
-            var userViewModel = new ViewModels.UserViewModel
-            {
-                UserName = currentUser.UserName,
-                Email = currentUser.Email,
-                PhoneNumber = currentUser.PhoneNumber,
-                PictureUrl = currentUser.Picture
-            };
-
-            return View(userViewModel);
+            //var userClaims = User.Claims.ToList();
+            //var email = User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Role);
+            //var currentUser = await _userManager.FindByNameAsync(User.Identity!.Name!);
+            //var userViewModel = new Core.ViewModels.UserViewModel
+            //{
+            //    UserName = currentUser.UserName,
+            //    Email = currentUser.Email,
+            //    PhoneNumber = currentUser.PhoneNumber,
+            //    PictureUrl = currentUser.Picture
+            //};
+            return View(await _memberService.GetUserViewModelByUserName(userName));
         }
 
         //public async Task<IActionResult> Logout()
@@ -55,7 +55,7 @@ namespace NetCoreIdentity.Controllers
         //alternative Logout method
         public async Task Logout()
         {
-            await _signInManager.SignOutAsync();
+            await _memberService.Logout();
         }
 
         public IActionResult PasswordChange()
@@ -70,26 +70,23 @@ namespace NetCoreIdentity.Controllers
             {
                 return View();
             }
-
-            var currentUser = await _userManager.FindByNameAsync(User.Identity!.Name!);
-
-            var checkOldPassword = await _userManager.CheckPasswordAsync(currentUser, model.PasswordOld);
-            if (!checkOldPassword)
+            //var currentUser = await _userManager.FindByNameAsync(User.Identity!.Name!);
+            //var checkOldPassword = await _userManager.CheckPasswordAsync(currentUser, model.PasswordOld);
+            if (!await _memberService.CheckPasswordAsync(userName, model.PasswordOld))
             {
                 ModelState.AddModelError(string.Empty, "Incorrect old password!");
                 return View();
             }
-            var resultChangePassword = await _userManager.ChangePasswordAsync(currentUser, model.PasswordOld, model.PasswordNew);
-            if (!resultChangePassword.Succeeded)
+            //var resultChangePassword = await _userManager.ChangePasswordAsync(currentUser, model.PasswordOld, model.PasswordNew);
+            var (isSuccess, errors) = await _memberService.ChangePasswordAsync(userName, model.PasswordOld, model.PasswordNew);
+            if (!isSuccess)
             {
-                ModelState.AddModelErrorList(resultChangePassword.Errors);
+                ModelState.AddModelErrorList(errors!);
                 return View();
             }
-
-            await _userManager.UpdateSecurityStampAsync(currentUser);
-            await _signInManager.SignOutAsync();
-            await _signInManager.PasswordSignInAsync(currentUser, model.PasswordNew, true, false);
-
+            //await _userManager.UpdateSecurityStampAsync(currentUser);
+            //await _signInManager.SignOutAsync();
+            //await _signInManager.PasswordSignInAsync(currentUser, model.PasswordNew, true, false);
             TempData["SuccessMessage"] = "Password has been change successfly.";
 
             return View();
@@ -98,19 +95,17 @@ namespace NetCoreIdentity.Controllers
         public async Task<IActionResult> UserEdit()
         {
             ViewBag.GenderList = new SelectList(Enum.GetNames(typeof(EGender)));
-
-            var currentUser = await _userManager.FindByNameAsync(User.Identity!.Name!);
-            var userEditViewModel = new UserEditViewModel()
-            {
-                UserName = currentUser.UserName,
-                Email = currentUser.Email,
-                PhoneNumber = currentUser.PhoneNumber,
-                BirthDate = currentUser.BirthDate,
-                City = currentUser.City,
-                Gender = currentUser.Gender
-            };
-
-            return View(userEditViewModel);
+            //var currentUser = await _userManager.FindByNameAsync(User.Identity!.Name!);
+            //var userEditViewModel = new UserEditViewModel()
+            //{
+            //    UserName = currentUser.UserName,
+            //    Email = currentUser.Email,
+            //    PhoneNumber = currentUser.PhoneNumber,
+            //    BirthDate = currentUser.BirthDate,
+            //    City = currentUser.City,
+            //    Gender = currentUser.Gender
+            //};
+            return View(await _memberService.GetUserEditViewModelAsync(userName));
         }
 
         [HttpPost]
@@ -120,77 +115,78 @@ namespace NetCoreIdentity.Controllers
             {
                 return View();
             }
-
-            var currentUser = await _userManager.FindByNameAsync(User.Identity!.Name!);
-            currentUser.UserName = model.UserName;
-            currentUser.Email = model.Email;
-            currentUser.PhoneNumber = model.PhoneNumber;
-            currentUser.BirthDate = model.BirthDate;
-            currentUser.City = model.City;
-            currentUser.Gender = model.Gender;
-
-
-            if (model.Picture != null && model.Picture.Length > 0)
+            var (isSuccess, errors) = await _memberService.EditUserAsync(model, userName);
+            if (!isSuccess)
             {
-                var wwwroot = _fileProvider.GetDirectoryContents("wwwroot");
-
-                var randomFileName = $"{Guid.NewGuid().ToString()}{Path.GetExtension(model.Picture.FileName)}";
-
-                var newPicturePath = Path.Combine(wwwroot.First(x => x.Name == "userPictures").PhysicalPath, randomFileName);
-
-                using var stream = new FileStream(newPicturePath, FileMode.Create);
-                await model.Picture.CopyToAsync(stream);
-
-                currentUser.Picture = randomFileName;
-            }
-            var updateToUserResult = await _userManager.UpdateAsync(currentUser);
-
-            if (!updateToUserResult.Succeeded)
-            {
-                ModelState.AddModelErrorList(updateToUserResult.Errors);
+                ModelState.AddModelErrorList(errors!);
                 return View();
             }
+            //var currentUser = await _userManager.FindByNameAsync(User.Identity!.Name!);
+            //currentUser.UserName = model.UserName;
+            //currentUser.Email = model.Email;
+            //currentUser.PhoneNumber = model.PhoneNumber;
+            //currentUser.BirthDate = model.BirthDate;
+            //currentUser.City = model.City;
+            //currentUser.Gender = model.Gender;
+            //if (model.Picture != null && model.Picture.Length > 0)
+            //{
+            //    var wwwroot = _fileProvider.GetDirectoryContents("wwwroot");
 
-            await _userManager.UpdateSecurityStampAsync(currentUser);
-            //we need new cookie and we have to signout and signin again!
-            await _signInManager.SignOutAsync();
+            //    var randomFileName = $"{Guid.NewGuid().ToString()}{Path.GetExtension(model.Picture.FileName)}";
+
+            //    var newPicturePath = Path.Combine(wwwroot.First(x => x.Name == "userPictures").PhysicalPath, randomFileName);
+
+            //    using var stream = new FileStream(newPicturePath, FileMode.Create);
+            //    await model.Picture.CopyToAsync(stream);
+
+            //    currentUser.Picture = randomFileName;
+            //}
+            //var updateToUserResult = await _userManager.UpdateAsync(currentUser);
+
+            //if (!updateToUserResult.Succeeded)
+            //{
+            //    ModelState.AddModelErrorList(updateToUserResult.Errors);
+            //    return View();
+            //}
+
+            //await _userManager.UpdateSecurityStampAsync(currentUser);
+            ////we need new cookie and we have to signout and signin again!
+            //await _signInManager.SignOutAsync();
             //for claims
-            var claims = new List<Claim>();
-            if (model.BirthDate.HasValue)
-            {
-                claims.Add(new Claim("Birthdate", model.BirthDate.Value.ToString()));
-            }
-            if (!String.IsNullOrEmpty(model.City))
-            {
-                claims.Add(new Claim("City", model.City));
-            }
-            if (claims.Any())
-            {
-                await _signInManager.SignInWithClaimsAsync(currentUser, true, claims.ToArray());
-            }
-            else
-            {
-                // If there are no claims, you can use the regular SignInAsync
-                await _signInManager.SignInAsync(currentUser,true);
-            }
+            //var claims = new List<Claim>();
+            //if (model.BirthDate.HasValue)
+            //{
+            //    claims.Add(new Claim("Birthdate", model.BirthDate.Value.ToString()));
+            //}
+            //if (!String.IsNullOrEmpty(model.City))
+            //{
+            //    claims.Add(new Claim("City", model.City));
+            //}
+            //if (claims.Any())
+            //{
+            //    await _signInManager.SignInWithClaimsAsync(currentUser, true, claims.ToArray());
+            //}
+            //else
+            //{
+            //    // If there are no claims, you can use the regular SignInAsync
+            //    await _signInManager.SignInAsync(currentUser,true);
+            //}
             //else
             //{
             //    await _signInManager.SignInAsync(currentUser, true);
             //}
 
-            var userEditViewModel = new UserEditViewModel()
-            {
-                UserName = currentUser.UserName,
-                Email = currentUser.Email,
-                PhoneNumber = currentUser.PhoneNumber,
-                BirthDate = currentUser.BirthDate,
-                City = currentUser.City,
-                Gender = currentUser.Gender
-            };
-
+            //var userEditViewModel = new UserEditViewModel()
+            //{
+            //    UserName = currentUser.UserName,
+            //    Email = currentUser.Email,
+            //    PhoneNumber = currentUser.PhoneNumber,
+            //    BirthDate = currentUser.BirthDate,
+            //    City = currentUser.City,
+            //    Gender = currentUser.Gender
+            //};
             TempData["SuccessMessage"] = "User information has been changed successfly.";
-
-            return View(userEditViewModel);
+            return View(await _memberService.GetUserEditViewModelAsync(userName));
 
         }
 

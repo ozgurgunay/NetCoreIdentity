@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using NetCoreIdentity.Models;
-using NetCoreIdentity.ViewModels;
+using NetCoreIdentity.Repository.Models;
+using NetCoreIdentity.Core.ViewModels;
 using System.Diagnostics;
 using NetCoreIdentity.Extensions;
 using System.Security.Policy;
-using NetCoreIdentity.Services;
+using NetCoreIdentity.Service.Services;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 

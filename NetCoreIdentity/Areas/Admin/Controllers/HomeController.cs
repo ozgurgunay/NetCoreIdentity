@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NetCoreIdentity.Areas.Admin.Models;
-using NetCoreIdentity.Models;
+using NetCoreIdentity.Repository.Models;
 
 namespace NetCoreIdentity.Areas.Admin.Controllers
 {
